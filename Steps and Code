@@ -1,0 +1,119 @@
+🧪 Exercise 1 – Configure Router Access
+
+Devices Used
+NYEDGE1 (Cisco 2911)
+
+NYEDGE2 (Cisco 2911)
+
+Task 1 – Create Local Credentials
+
+show running-config
+
+configure terminal
+hostname NYEDGE1
+banner motd %
+********************************************************************
+*                        WARNING - NOTICE                          *
+********************************************************************
+This system is the property of ACIPLAB INC...
+%
+enable secret cisco
+service password-encryption
+aaa new-model
+username j-admin privilege 15 secret Passw0rd
+write memory
+
+Task 2 – Configure SSH Remote Access
+
+configure terminal
+ip domain-name aciplab.com
+crypto key generate rsa
+# When prompted, enter:
+2048
+
+ip ssh version 2
+ip ssh time-out 60
+ip ssh authentication-retries 2
+line vty 0 4
+transport input ssh
+exit
+
+interface gigabitethernet 1/0
+ip address 192.168.0.99 255.255.255.0
+no shutdown
+exit
+
+On NYEDGE2 for SSH Testing
+
+configure terminal
+interface gigabitethernet 1/0
+ip address 192.168.0.100 255.255.255.0
+no shutdown
+exit
+
+ping 192.168.0.99
+ssh -l j-admin 192.168.0.99
+# Password: Passw0rd
+
+enable
+# Password: cisco
+
+🔒 Exercise 2 – Harden Router Access
+Task 1 – Disable Unused Services on NYEDGE1
+
+configure terminal
+no service dhcp
+no service pad
+no cdp run
+no ip bootp server
+no ip domain-lookup
+no ip finger
+no ip source-route
+
+Task 2 – Restrict Router Access
+Disable Local Ports
+
+line con 0
+no password
+no exec
+exit
+
+line aux 0
+no password
+no exec
+exit
+
+Configure ACL for SSH & Ping
+
+access-list 101 permit tcp host 192.168.0.100 host 192.168.0.99 eq 22
+access-list 101 deny tcp any any eq 22
+access-list 101 permit icmp any any
+
+interface gigabitethernet 1/0
+ip access-group 101 in
+exit
+
+show access-lists
+
+🕒 Exercise 3 – Configure Router Logging
+
+Task 1 – Configure NTP on NYEDGE1
+
+configure terminal
+ntp server 132.163.96.4
+exit
+
+show ntp associations
+
+Task 2 – Configure and Test Logging
+
+configure terminal
+logging buffered informational
+logging buffered 64000
+service timestamps debug datetime msec show-timezone localtime
+service timestamps log datetime msec show-timezone localtime
+
+📝 Notes
+All passwords, secrets, and usernames are for lab use only.
+
+Adjust interface names (GigabitEthernet1/0, etc.) as per actual hardware.
